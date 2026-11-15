@@ -309,6 +309,10 @@ header .intro-course {
     font-size: 13px;
 }
 
+.education-entry .sub-heading {
+    margin-top: 22px;
+}
+
 .education-entry a {
     color: #263B53;
     font-size: 14px;
@@ -344,6 +348,39 @@ header .intro-course {
 .two-columns .education-entry {
     flex: 1;
     margin: 0;
+}
+
+.two-columns .stack {
+    flex: 1;
+}
+
+.stack .education-entry {
+    margin: 0 0 20px;
+}
+
+.stack .education-entry:last-child {
+    margin-bottom: 0;
+}
+
+.content-section .path {
+    margin: 10px 0 0;
+    padding-left: 0;
+    list-style: none;
+}
+
+.path li {
+    padding: 0 0 14px 15px;
+    border-left: 2px solid #A18A67;
+}
+
+.path li:last-child {
+    padding-bottom: 0;
+}
+
+.path-date {
+    display: block;
+    color: #7D6A49;
+    font-size: 13px;
 }
 
 
@@ -667,6 +704,12 @@ footer .copyright {
     .project-image {
         height: 200px;
     }
+
+    .interest-card {
+        flex: 1 1 100%;
+    }
+}
+
 
     .interest-card {
         flex: 1 1 100%;
