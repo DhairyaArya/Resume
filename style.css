@@ -592,6 +592,10 @@ header .intro-course {
    CONTACT / FOOTER
 ================================= */
 
+#contact {
+    border-top: 4px solid #A18A67;
+}
+
 footer {
     padding: 45px 20px 25px;
     background-color: #1D2E42;
