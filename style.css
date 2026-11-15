@@ -504,7 +504,8 @@ header .intro-course {
 }
 
 .interest-card {
-    flex: 1 1 45%;
+    flex: 0 0 calc(50% - 10px);
+    min-width: 0;
     padding: 22px 25px;
     background-color: #F6F4EF;
     border-top: 4px solid #A18A67;
