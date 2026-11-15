@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Galaxy Defender | Dhairya Arya</title>
+<style>
+body{margin:0;padding:20px;background:#263B53;color:#fff;font-family:Arial,sans-serif;text-align:center}
+h1{font-family:Georgia,serif;font-weight:normal;margin:10px 0}
+a{color:#D6C6A5}
+canvas{display:block;margin:15px auto;max-width:100%;height:auto;touch-action:none;border:4px solid #F6F4EF}
+p{color:#E4E8EE}
+</style>
+</head>
+<body>
+<h1>Galaxy Defender</h1>
+<canvas id="c" width="500" height="600"></canvas>
+<p>Move your mouse (or finger) to steer. The ship fires automatically. Click to start.</p>
+<p><a href="index.html#projects">&larr; Back to my website</a></p>
+<script>
+const W=500,H=600,SW=60,SH=30,BW=4,BH=16,BS=10,EW=34,EH=34,C=document.getElementById("c"),g=C.getContext("2d");
+const ri=(a,b)=>Math.floor(a+Math.random()*(b-a+1)),cl=(v,a,b)=>Math.max(a,Math.min(b,v));
+const ov=(a,b)=>a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;
+let mx=-1,scene="title",s={},stars=[],last={score:0,level:1};
+const mk=n=>Array.from({length:n},()=>({x:ri(0,W),y:ri(0,H),r:[1,1,1,2][ri(0,3)],sp:[1,1,1,2][ri(0,3)]}));
+stars=mk(80);
+function pos(e){const r=C.getBoundingClientRect();mx=(e.clientX-r.left)*W/r.width}
+C.addEventListener("pointermove",pos);
+C.addEventListener("pointerdown",e=>{pos(e);if(scene==="title")start();else if(scene==="over"){scene="title";stars=mk(80)}});
+function start(){s={sx:220,sy:530,bul:[],en:[],ex:[],score:0,lives:5,level:1,bt:0,et:0,espd:2,gap:95};stars=mk(90);scene="play"}
+function tick(){
+  for(const t of stars){t.y+=t.sp;if(t.y>H+5){t.y=-5;t.x=ri(0,W)}}
+  if(scene!=="play")return;
+  if(mx!==-1)s.sx=cl(mx-SW/2,20,W-SW-20);
+  if(++s.bt>=12){s.bt=0;s.bul.push({x:s.sx+SW/2-BW/2,y:s.sy-8-BH,w:BW,h:BH})}
+  if(++s.et>=s.gap){s.et=0;s.en.push({x:ri(10,W-EW-10),y:-EH,w:EW,h:EH,sp:s.espd})}
+  s.bul=s.bul.filter(b=>{b.y-=BS;return b.y+b.h>=0});
+  const ship={x:s.sx,y:s.sy,w:SW,h:SH},keep=[];
+  for(const e of s.en){
+    e.y+=e.sp;
+    if(e.y>H){s.lives--;continue}
+    if(ov(ship,e)){s.lives--;s.ex.push({x:e.x+EW/2,y:e.y+EH/2,life:8});continue}
+    keep.push(e);
+  }
+  s.en=keep;
+  for(const b of s.bul.slice()){
+    const h=s.en.find(e=>ov(b,e));
+    if(!h)continue;
+    s.bul.splice(s.bul.indexOf(b),1);s.en.splice(s.en.indexOf(h),1);
+    s.score++;s.ex.push({x:h.x+EW/2,y:h.y+EH/2,life:8});
+    const nl=1+Math.floor(s.score/8);
+    if(nl!==s.level){s.level=nl;s.espd=2+Math.floor((nl-1)/2);s.gap=Math.max(28,95-(nl-1)*6)}
+  }
+  s.ex=s.ex.filter(x=>--x.life>0);
+  if(s.lives<=0){last={score:s.score,level:s.level};scene="over"}
+}
+const dot=(x,y,r,c)=>{g.fillStyle=c;g.beginPath();g.arc(x,y,r,0,7);g.fill()};
+const rect=(x1,y1,x2,y2,c)=>{g.fillStyle=c;g.fillRect(x1,y1,x2-x1,y2-y1)};
+const txt=(t,x,y,c)=>{g.fillStyle=c;g.font="bold 14px Arial";g.textAlign="center";g.textBaseline="middle";g.fillText(t,x,y)};
+function ship(x,y){
+  rect(x,y,x+SW,y+SH,"#00BFFF");dot(x+30,y-2,12,"#00FFFF");
+  rect(x-8,y+10,x,y+26,"#1E90FF");rect(x+SW,y+10,x+SW+8,y+26,"#1E90FF");rect(x+22,y+SH,x+38,y+SH+6,"#FFFF00");
+}
+function enemy(x,y){dot(x+17,y+17,17,"#F00");dot(x+10.5,y+12.5,2.5,"#000");dot(x+23.5,y+12.5,2.5,"#000");rect(x+11,y+23,x+23,y+25,"#000")}
+function draw(){
+  rect(0,0,W,H,"#000");
+  for(const t of stars)dot(t.x,t.y,t.r,"#fff");
+  if(scene==="title"){
+    txt("GALAXY DEFENDER",250,150,"cyan");
+    txt("Move the mouse to steer",250,205,"#fff");
+    txt("The ship fires automatically",250,240,"#fff");
+    txt("Hit enemies before they reach the bottom",250,275,"#fff");
+    txt("Click anywhere to start",250,330,"yellow");
+    ship(220,410);enemy(80,110);enemy(390,110);
+  }else if(scene==="play"){
+    ship(s.sx,s.sy);
+    for(const e of s.en)enemy(e.x,e.y);
+    for(const b of s.bul)rect(b.x,b.y,b.x+b.w,b.y+b.h,"#FF0");
+    for(const x of s.ex){dot(x.x,x.y,12,"orange");dot(x.x,x.y,6,"yellow")}
+    txt("Score: "+s.score,70,20,"#fff");txt("Lives: "+s.lives,250,20,"#fff");txt("Level: "+s.level,430,20,"#fff");
+  }else{
+    txt("GAME OVER",250,170,"red");
+    txt("Final Score: "+last.score,250,225,"#fff");
+    txt("Final Level: "+last.level,250,260,"#fff");
+    txt("Click anywhere to play again",250,330,"yellow");
+    ship(220,410);
+  }
+}
+let prev=0,acc=0;
+function loop(t){acc=Math.min(acc+t-prev,200);prev=t;while(acc>=20){tick();acc-=20}draw();requestAnimationFrame(loop)}
+requestAnimationFrame(t=>{prev=t;loop(t)});
+</script>
+</body>
+</html>

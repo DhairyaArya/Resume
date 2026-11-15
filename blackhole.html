@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Black Hole Collector | Dhairya Arya</title>
+<style>
+body{margin:0;padding:20px;background:#263B53;color:#fff;font-family:Arial,sans-serif;text-align:center}
+h1{font-family:Georgia,serif;font-weight:normal;margin:10px 0}
+a{color:#D6C6A5}
+canvas{display:block;margin:15px auto;max-width:100%;height:auto;touch-action:none;border:4px solid #F6F4EF}
+p{color:#E4E8EE}
+</style>
+</head>
+<body>
+<h1>Black Hole Collector</h1>
+<canvas id="c" width="400" height="400"></canvas>
+<p>Move your mouse (or finger) to guide the black hole. Click to start.</p>
+<p><a href="index.html#projects">&larr; Back to my website</a></p>
+<script>
+const W=400,H=400,BG="#050816",C=document.getElementById("c"),g=C.getContext("2d");
+const STAR=["#FFFFFF","#C7D2FE","#94A3B8"],PART=["#FFFFFF","#A78BFA","#60A5FA","#FDE68A"];
+const SCORE={dust:2,rock:6,asteroid:12,satellite:22,planet:40},NEED={dust:8,rock:13,asteroid:19,satellite:27,planet:36};
+const COL={dust:"#A7F3D0",rock:"#94A3B8",asteroid:"#F59E0B",satellite:"#E5E7EB",planet:"#FB7185"};
+const SIZE={dust:[4,7],rock:[7,11],asteroid:[11,16],satellite:[10,14],planet:[18,26]};
+const WIN=220,rnd=(a,b)=>a+Math.random()*(b-a),ri=(a,b)=>Math.floor(rnd(a,b+1)),pick=a=>a[ri(0,a.length-1)],cl=(v,a,b)=>Math.max(a,Math.min(b,v));
+let mx=-1,my=-1,scene="title",s={},stars=[];
+const mk=n=>Array.from({length:n},()=>({x:ri(0,W),y:ri(0,H),r:pick([1,1,1,2]),sp:pick([1,1,1,2]),c:pick(STAR)}));
+stars=mk(55);
+function pos(e){const r=C.getBoundingClientRect();mx=(e.clientX-r.left)*W/r.width;my=(e.clientY-r.top)*H/r.height}
+C.addEventListener("pointermove",pos);
+C.addEventListener("pointerdown",e=>{pos(e);if(scene==="title")start();else if(scene!=="play"){scene="title";stars=mk(55)}});
+function start(){s={score:0,lives:3,frame:0,x:W/2,y:H/2,hr:12,lvl:1,objs:[],parts:[]};stars=mk(90);scene="play"}
+function spawn(lvl){
+  const pool=["dust","dust","rock","rock","asteroid","asteroid"];
+  if(lvl>=2)pool.push("satellite","asteroid");
+  if(lvl>=4)pool.push("planet","satellite");
+  const k=pick(pool),r=ri(...SIZE[k]),side=pick(["l","r","t","b"]),d=lvl*.08;let x,y,vx,vy;
+  if(side==="l"){x=-r-2;y=ri(0,H);vx=rnd(.8,2.2)+d;vy=rnd(-.8,.8)}
+  else if(side==="r"){x=W+r+2;y=ri(0,H);vx=-rnd(.8,2.2)-d;vy=rnd(-.8,.8)}
+  else if(side==="t"){x=ri(0,W);y=-r-2;vx=rnd(-.9,.9);vy=rnd(.8,2)+d}
+  else{x=ri(0,W);y=H+r+2;vx=rnd(-.9,.9);vy=-rnd(.8,2)-d}
+  return{k,x,y,vx,vy,r};
+}
+function sparks(x,y,c){for(let i=0;i<8;i++){const a=rnd(0,6.283),sp=rnd(1,3);s.parts.push({x:x+rnd(-2,2),y:y+rnd(-2,2),vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,life:ri(10,18),r:ri(1,2),c:pick(PART.concat(c))})}}
+function tick(){
+  for(const t of stars){t.y+=t.sp;if(t.y>H+5){t.y=-5;t.x=ri(0,W)}}
+  if(scene!=="play")return;
+  s.frame++;
+  if(mx!==-1)s.x+=(mx-s.x)*.18;
+  if(my!==-1)s.y+=(my-s.y)*.18;
+  s.x=cl(s.x,20,W-20);s.y=cl(s.y,34,H-20);
+  const hr=cl(12+Math.floor(s.score/4),12,120),pull=hr*5+40,lvl=1+Math.floor(s.score/60);
+  const rate=cl(14-lvl*2,5,14),max=cl(6+lvl*2,6,18);
+  s.hr=hr;s.lvl=lvl;
+  if(s.frame%rate===0&&s.objs.length<max)s.objs.push(spawn(lvl));
+  const alive=[];
+  for(const o of s.objs){
+    const dx=s.x-o.x,dy=s.y-o.y,d=Math.hypot(dx,dy);
+    if(d<pull&&d>.1){const f=.04+(pull-d)/pull*.06;o.vx+=dx/d*f;o.vy+=dy/d*f}
+    o.vx*=.992;o.vy*=.992;o.x+=o.vx;o.y+=o.vy;
+    if(o.x<-40||o.x>W+40||o.y<-40||o.y>H+40)continue;
+    if(d<=hr+o.r*.85){
+      if(hr>=NEED[o.k]){s.score+=SCORE[o.k];sparks(o.x,o.y,COL[o.k])}
+      else{s.lives--;sparks(o.x,o.y,"#FCA5A5");s.x=cl(s.x-dx*.03,20,W-20);s.y=cl(s.y-dy*.03,34,H-20)}
+    }else alive.push(o);
+  }
+  s.objs=alive;
+  s.parts=s.parts.filter(p=>{p.x+=p.vx;p.y+=p.vy;p.vx*=.95;p.vy*=.95;p.life--;return p.life>0&&p.x>-20&&p.x<W+20&&p.y>-20&&p.y<H+20});
+  if(s.score>=WIN)scene="win";else if(s.lives<=0)scene="over";
+}
+const dot=(x,y,r,c)=>{g.fillStyle=c;g.beginPath();g.arc(x,y,r,0,7);g.fill()};
+const ell=(x1,y1,x2,y2,c)=>{g.fillStyle=c;g.beginPath();g.ellipse((x1+x2)/2,(y1+y2)/2,(x2-x1)/2,(y2-y1)/2,0,0,7);g.fill()};
+const rect=(x1,y1,x2,y2,c)=>{g.fillStyle=c;g.fillRect(x1,y1,x2-x1,y2-y1)};
+const txt=(t,x,y,c,al="center",f="bold 14px Arial")=>{g.fillStyle=c;g.font=f;g.textAlign=al;g.textBaseline="middle";g.fillText(t,x,y)};
+function draw(){
+  rect(0,0,W,H,BG);
+  ell(-40,-40,210,160,"#1E1B4B");ell(310,60,540,250,"#0F172A");ell(30,360,220,560,"#111827");
+  for(const t of stars)dot(t.x,t.y,t.r,t.c);
+  if(scene==="title"){
+    ell(165,70,235,140,"#312E81");ell(176,81,224,129,"#1E293B");ell(185,90,215,120,"#000");
+    txt("BLACK HOLE COLLECTOR",W/2,185,"#fff");
+    txt("Move your mouse to guide the black hole.",W/2,216,"#D1D5DB");
+    txt("Absorb small space junk, grow bigger, and survive.",W/2,236,"#D1D5DB");
+    txt("Click anywhere to start",W/2,270,"#A78BFA");
+  }else if(scene==="play"){
+    for(const o of s.objs)dot(o.x,o.y,o.r,COL[o.k]);
+    for(const p of s.parts)dot(p.x,p.y,p.r,p.c);
+    dot(s.x,s.y,s.hr+10,"#6D28D9");dot(s.x,s.y,s.hr+5,"#2563EB");dot(s.x,s.y,s.hr,"#000");dot(s.x,s.y,3,"#E0F2FE");
+    txt("Score: "+s.score,10,14,"#fff","left");
+    txt("Lives: "+s.lives,110,14,"#fff","left");
+    txt("Level: "+s.lvl,200,14,"#C4B5FD","left");
+    txt(s.score<50?"Collect the small stuff":s.score<130?"Bigger debris is edible":"Cosmic threat",W-10,14,"#93C5FD","right","12px Arial");
+  }else if(scene==="over"){
+    rect(50,120,350,285,"#0F172A");rect(58,128,342,277,"#111827");
+    txt("GAME OVER",W/2,165,"#FCA5A5");
+    txt("Final Score: "+s.score,W/2,205,"#fff");
+    txt("Click anywhere to restart",W/2,232,"#C4B5FD");
+    txt("Try to survive longer and grow bigger",W/2,255,"#CBD5E1");
+  }else{
+    rect(42,110,358,300,"#082F49");rect(50,118,350,292,"#0F172A");
+    txt("UNIVERSE CONSUMED",W/2,160,"#67E8F9");
+    txt("Final Score: "+s.score,W/2,202,"#fff");
+    txt("You became the largest force in space.",W/2,236,"#D1FAE5");
+    txt("Click anywhere to play again",W/2,270,"#FDE047");
+  }
+}
+let last=0,acc=0;
+function loop(t){acc=Math.min(acc+t-last,200);last=t;while(acc>=20){tick();acc-=20}draw();requestAnimationFrame(loop)}
+requestAnimationFrame(t=>{last=t;loop(t)});
+</script>
+</body>
+</html>
