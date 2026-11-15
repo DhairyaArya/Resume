@@ -1,2 +1,2 @@
 # Resume
-Personal resume made using css and html
+Personal resume website made using css and html
